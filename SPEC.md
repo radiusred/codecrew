@@ -259,6 +259,10 @@ GitHub-native approval must come from a party with no human account:
 1. **Solo** — one human, agents act under the operator's own auth. The whole
    protocol works on `gh auth login` alone; the review gate degrades to
    explicit operator confirmation (§6) because GitHub forbids self-approval.
+   The confirmation must come from a human identity — a `[bot]` or routed
+   role identity is refused — and when the confirmer is also the PR author,
+   the recorded comment states that no independent principal exists. See
+   [docs/identities.md](docs/identities.md) for the operational path.
 2. **Multi-human team** — a colleague satisfies the review gate natively; app
    identities add only attribution (distinguishing an agent's work from its
    dispatcher's).
@@ -283,7 +287,7 @@ hub).
 | `codecrew task new --milestone <id> --repo <spoke>` | Creates a task issue in the spoke from the template; attaches it to the milestone as a sub-issue. |
 | `codecrew task start <ref>` | Assigns the caller's identity, verifies a plan is present (refuses to start a planless nontrivial task), creates the working branch — unless the caller's role routing resolves to a role whose contract forbids commits (`qa`, `reviewer`), which get no branch. |
 | `codecrew checkpoint <ref> --question "…"` | Raises a human gate: posts the question as a comment, applies `cc:needs-decision`. |
-| `codecrew task finish <ref>` | The gatekeeper: verifies a PR exists, CI checks are green, an approving review exists from a non-doer, and deviations referenced in the PR body have recorded comments — then merges (rebase) and closes. Refuses otherwise, with the specific unmet condition. In a solo-tier project (§5) where author and operator are the same principal, the non-doer approval degrades to an explicit operator confirmation, recorded as a PR comment. |
+| `codecrew task finish <ref>` | The gatekeeper: verifies a PR exists, CI checks are green, an approving review exists from a non-doer, and deviations referenced in the PR body have recorded comments — then merges (rebase) and closes. Refuses otherwise, with the specific unmet condition. In a solo-tier project (§5) where author and operator are the same principal, the non-doer approval degrades to an explicit operator confirmation, recorded as a PR comment; the confirming identity must be human — crew identities (`[bot]` suffix or routed role) are refused with `refused[SELF_CONFIRM]`. |
 | `codecrew milestone close <id>` | Verifies all tasks closed and every requirement's latest QA verdict is `satisfied` (`refused[VERDICT_MISSING]` / `refused[VERDICT_UNSATISFIED]` otherwise; only verdicts from the QA role's identity count, and a later verdict supersedes an earlier one); gathers every Decision/Deviation comment across the milestone's tasks into raw material for the doc-synthesizer; refuses to close until the milestone document PR is merged. |
 
 Verbs exit nonzero with a machine-readable reason when a gate blocks them, so
@@ -293,7 +297,10 @@ agents can act on the refusal rather than parse prose.
 
 Role contracts live in the hub under `roles/`, one short markdown file each,
 loadable by any harness (and referenced from `AGENTS.md` for harnesses that
-read it natively). v1 roles:
+read it natively). Roles are contracts, not accounts: no GitHub App needs to
+exist for a role to be staffed — every role can act as the human operator
+(§5, and [docs/identities.md](docs/identities.md) for both the solo path and
+App creation). v1 roles:
 
 - **implementer** — writes the plan into the task issue, does the work in
   atomic commits, records decisions/deviations as they happen, opens the PR,
