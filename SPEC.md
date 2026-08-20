@@ -225,14 +225,23 @@ hub: self                # spokes: owner/repo
 
 # Advisory role routing, read by whoever dispatches agents.
 roles:
-  implementer: { harness: claude-code, model: claude-fable-5 }
-  reviewer:    { harness: codex }
-  qa:          { harness: codex }
-  doc-synthesizer: { harness: claude-code }
+  implementer: { harness: claude-code, model: claude-fable-5, identity: my-org-coder }
+  reviewer:    { harness: codex, identity: my-org-reviewer }
+  qa:          { harness: codex, identity: my-org-qa }
+  doc-synthesizer: { harness: claude-code, identity: my-org-docs }
 ```
 
 Role routing is **advisory**: CodeCrew does not dispatch agents, so the config
 is a contract for the orchestrator (or human) that does.
+
+`identity` names the **GitHub App** the role acts as. Each role gets its own
+app identity so agent-authored work is attributable and distinct from the
+operator — without this, every PR is authored by the operator's account and
+GitHub's prohibition on self-approval makes the non-doer review gate
+unsatisfiable. App private keys live outside the repo (by convention
+`~/.config/codecrew/<slug>.*.private-key.pem`); short-lived installation
+tokens are minted per invocation. A role with no identity (`~`) acts as the
+human operator.
 
 ## 6. Workflow verbs
 
@@ -356,5 +365,3 @@ verbs and the GitHub adapter; CodeCrew's own hub bootstrapped with it.
   from issue state.
 - Issue/PR templates shipped as `.github/` templates versus created by the
   CLI at `new` time.
-- Identity conventions for agents (how an implementer's "caller identity" is
-  represented when multiple agents share a machine account).
