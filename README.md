@@ -15,3 +15,5 @@ CodeCrew, starting with the protocol run by hand.
   and their trade-offs
 - [docs/gsd-vs-frontier-orchestration.md](docs/gsd-vs-frontier-orchestration.md)
   — the analysis that motivated the project
+
+Licensed under [Apache 2.0](LICENSE).
