@@ -248,6 +248,53 @@ func ExtractRecords(source IssueRef, comments []Comment) []Record {
 	return records
 }
 
+// requirementID matches a bold requirement ID as written in milestone
+// bodies (**M3-R1**); verdictLine matches the QA verdict convention with
+// the state inside the bold (**M3-R1 — satisfied.**), so requirement
+// definition lines never parse as verdicts.
+var (
+	requirementID = regexp.MustCompile(`\*\*(M\d+-R\d+)\*\*`)
+	verdictLine   = regexp.MustCompile(`(?i)\*\*(M\d+-R\d+)\s*[—–-]+\s*(satisfied|not satisfied|untestable)\b`)
+)
+
+// RequirementIDs extracts the ordered, deduplicated requirement IDs from a
+// milestone body's Requirements section.
+func RequirementIDs(body string) []string {
+	var ids []string
+	seen := map[string]bool{}
+	for _, m := range requirementID.FindAllStringSubmatch(section(body, "## Requirements"), -1) {
+		if !seen[m[1]] {
+			seen[m[1]] = true
+			ids = append(ids, m[1])
+		}
+	}
+	return ids
+}
+
+// Verdict is one QA requirement verdict found in a comment (roles/qa.md).
+type Verdict struct {
+	ID     string
+	State  string // "satisfied", "not satisfied", or "untestable"
+	Author string
+}
+
+// ParseVerdicts scans comments in order for verdict lines. Callers filter
+// by author role and take the last entry per ID: a later verdict
+// supersedes an earlier one.
+func ParseVerdicts(comments []Comment) []Verdict {
+	var verdicts []Verdict
+	for _, c := range comments {
+		for _, m := range verdictLine.FindAllStringSubmatch(c.Body, -1) {
+			verdicts = append(verdicts, Verdict{
+				ID:     m[1],
+				State:  strings.ToLower(m[2]),
+				Author: c.Author,
+			})
+		}
+	}
+	return verdicts
+}
+
 // UnresolvedGates returns the **Gate raised:** comments that have no later
 // resolution record (**Gate resolved:** or **Decision:**). A single trailing
 // resolution covers every gate raised before it — a human may answer several

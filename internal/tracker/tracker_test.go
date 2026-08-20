@@ -97,6 +97,47 @@ func TestUnresolvedGates(t *testing.T) {
 	}
 }
 
+func TestRequirementIDs(t *testing.T) {
+	body := "## Goal\nX\n\n## Requirements\n" +
+		"- **M3-R1** — gate resolutions are gathered\n" +
+		"- **M3-R2** — task start is role-aware\n" +
+		"- **M3-R1** — duplicated ID is deduped\n\n" +
+		"## Gates\n- **M3-R9** — outside the Requirements section, ignored\n"
+	got := RequirementIDs(body)
+	want := []string{"M3-R1", "M3-R2"}
+	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		t.Errorf("RequirementIDs = %v, want %v", got, want)
+	}
+	if ids := RequirementIDs("## Goal\nno requirements section"); len(ids) != 0 {
+		t.Errorf("missing section should yield none, got %v", ids)
+	}
+}
+
+func TestParseVerdicts(t *testing.T) {
+	comments := []Comment{
+		// M2's actual shape: bullet list, em-dash inside the bold, trailing period.
+		{Author: "testy", Body: "## QA verdict\n\n- **M2-R1 — satisfied.** built and ran it\n- **M2-R2 — not satisfied.** stale claim\n"},
+		{Author: "testy", Body: "**M2-R2 — satisfied.** This verdict supersedes my earlier one."},
+		{Author: "cody", Body: "**M2-R4 — satisfied.** (not QA — caller filters by author)"},
+		{Author: "human", Body: "- **M2-R3** — a requirement definition line must not parse as a verdict"},
+	}
+	got := ParseVerdicts(comments)
+	want := []Verdict{
+		{ID: "M2-R1", State: "satisfied", Author: "testy"},
+		{ID: "M2-R2", State: "not satisfied", Author: "testy"},
+		{ID: "M2-R2", State: "satisfied", Author: "testy"},
+		{ID: "M2-R4", State: "satisfied", Author: "cody"},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d verdicts %v, want %d", len(got), got, len(want))
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("verdict[%d] = %v, want %v", i, got[i], want[i])
+		}
+	}
+}
+
 func TestInferState(t *testing.T) {
 	cases := []struct {
 		name string

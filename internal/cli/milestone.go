@@ -125,6 +125,39 @@ func milestoneClose(w io.Writer, args []string) error {
 		return refuse("OPEN_TASKS", "tasks not closed: %s", strings.Join(open, ", "))
 	}
 
+	// Gate 2: every requirement carries a satisfied QA verdict (a later
+	// verdict supersedes an earlier one; only the QA role's count).
+	body, err := c.t.IssueBody(milestone.Ref)
+	if err != nil {
+		return err
+	}
+	comments, err := c.t.Comments(milestone.Ref)
+	if err != nil {
+		return err
+	}
+	latest := map[string]string{}
+	for _, v := range tracker.ParseVerdicts(comments) {
+		if c.roleFor(v.Author) == "qa" {
+			latest[v.ID] = v.State
+		}
+	}
+	var missing, unsatisfied []string
+	for _, id := range tracker.RequirementIDs(body) {
+		state, ok := latest[id]
+		switch {
+		case !ok:
+			missing = append(missing, id)
+		case state != "satisfied":
+			unsatisfied = append(unsatisfied, fmt.Sprintf("%s (%s)", id, state))
+		}
+	}
+	if len(missing) > 0 {
+		return refuse("VERDICT_MISSING", "no QA verdict on %s for: %s — dispatch QA (roles/qa.md)", milestone.Ref, strings.Join(missing, ", "))
+	}
+	if len(unsatisfied) > 0 {
+		return refuse("VERDICT_UNSATISFIED", "latest QA verdict not satisfied for: %s — remedy and re-dispatch QA", strings.Join(unsatisfied, ", "))
+	}
+
 	// Gather Decision/Deviation raw material for the doc-synthesizer.
 	records, err := gatherRecords(c, milestone)
 	if err != nil {
