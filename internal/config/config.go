@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -61,6 +62,24 @@ func Parse(data []byte) (*Config, error) {
 		return nil, fmt.Errorf("missing required field: hub")
 	}
 	return &cfg, nil
+}
+
+// RoleFor resolves a viewer login to the role name whose identity it acts
+// as, normalising GitHub's "[bot]" suffix (the viewer of an App token is
+// "<slug>[bot]" while the routing table names the App slug). Unmatched or
+// empty logins resolve to "" — an empty identity (unrouted role) never
+// matches.
+func (c *Config) RoleFor(login string) string {
+	login = strings.TrimSuffix(login, "[bot]")
+	if login == "" {
+		return ""
+	}
+	for name, role := range c.Roles {
+		if role.Identity == login {
+			return name
+		}
+	}
+	return ""
 }
 
 // HubRepo resolves the hub to an owner/repo string. current is the

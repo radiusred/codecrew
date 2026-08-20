@@ -35,6 +35,31 @@ func TestParseMissingHub(t *testing.T) {
 	}
 }
 
+func TestRoleFor(t *testing.T) {
+	cfg := &Config{Roles: map[string]Role{
+		"implementer": {Identity: "radiusred-cody"},
+		"qa":          {Identity: "radiusred-testy"},
+		"reviewer":    {}, // identity: ~ — human operator during bootstrap
+	}}
+	cases := []struct {
+		login, want string
+	}{
+		{"radiusred-cody[bot]", "implementer"},
+		{"radiusred-testy[bot]", "qa"},
+		{"radiusred-testy", "qa"},
+		{"davison", ""},
+		{"", ""}, // empty login must not match the reviewer's empty identity
+	}
+	for _, c := range cases {
+		if got := cfg.RoleFor(c.login); got != c.want {
+			t.Errorf("RoleFor(%q) = %q, want %q", c.login, got, c.want)
+		}
+	}
+	if got := (&Config{}).RoleFor("radiusred-cody[bot]"); got != "" {
+		t.Errorf("no roles configured should resolve to \"\", got %q", got)
+	}
+}
+
 func TestHubRepo(t *testing.T) {
 	self := &Config{Hub: "self"}
 	if got := self.HubRepo("radiusred/spoke"); got != "radiusred/spoke" {

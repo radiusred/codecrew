@@ -116,11 +116,15 @@ func taskStart(w io.Writer, args []string) error {
 		}
 	}
 
-	branch := fmt.Sprintf("task/%d-%s", ref.Number, slug(task.Title))
-	if err := c.t.DevelopBranch(ref, branch); err != nil {
-		fmt.Fprintf(w, "note: could not create linked branch (%v); create %q manually\n", err, branch)
+	if role := c.roleFor(viewer); role == "qa" || role == "reviewer" {
+		fmt.Fprintf(w, "role %s does not commit (roles/%s.md); no linked branch created\n", role, role)
 	} else {
-		fmt.Fprintf(w, "linked branch %s created\n", branch)
+		branch := fmt.Sprintf("task/%d-%s", ref.Number, slug(task.Title))
+		if err := c.t.DevelopBranch(ref, branch); err != nil {
+			fmt.Fprintf(w, "note: could not create linked branch (%v); create %q manually\n", err, branch)
+		} else {
+			fmt.Fprintf(w, "linked branch %s created\n", branch)
+		}
 	}
 	fmt.Fprintf(w, "started %s as @%s\n", ref, viewer)
 	return nil

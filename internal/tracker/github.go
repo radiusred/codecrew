@@ -307,6 +307,11 @@ func (GitHub) HasMilestoneDoc(repo string, n int) (bool, error) {
 	return false, nil
 }
 
+func (GitHub) FileContent(repo, path string) ([]byte, error) {
+	return gh.Run("api", fmt.Sprintf("repos/%s/contents/%s", repo, path),
+		"-H", "Accept: application/vnd.github.raw+json")
+}
+
 const taskQuery = `
 query($owner: String!, $repo: String!, $num: Int!) {
   repository(owner: $owner, name: $repo) {
