@@ -27,7 +27,7 @@ under GitHub App identities, non-doer review, deterministic CI gates, and a
 synthesized closing document — and was closed by the binary itself. See
 [docs/milestones/](docs/milestones/) for the per-milestone records.
 
-Not yet here: a QA agent dispatch history, and any backend other than GitHub.
+Not yet here: any backend other than GitHub.
 
 ## Install and use
 
