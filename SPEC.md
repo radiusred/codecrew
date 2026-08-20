@@ -100,7 +100,7 @@ into any repo can find the coordination point. In the hub it declares
   transfer preserves comments and leaves redirects); pointer files are updated.
 - **Repo splits:** open task issues are transferred with GitHub's issue
   transfer. Transfer drops label associations, so conventions must be cheap to
-  re-apply (the CLI re-labels from the milestone's task list).
+  re-apply (re-label, re-attach the sub-issue link to the milestone).
 
 ## 4. State model
 
@@ -124,13 +124,14 @@ One paragraph.
 - **M1-R1** — <requirement>
 - **M1-R2** — <requirement>
 
-## Tasks
-- [ ] owner/repo#12 — <title>
-- [ ] owner/repo#15 — <title>
-
 ## Gates
 What "done" means beyond CI: e2e suites, manual UAT, sign-offs.
 ```
+
+The milestone's tasks are attached as **GitHub sub-issues**, not listed in
+the body: the tracking issue shows live per-task states and progress
+natively, and nothing is hand-maintained — a checkbox list rots the moment
+someone forgets to tick it (state is inferred, not bookkept).
 
 Requirement IDs are `M<milestone>-R<n>` and are referenced by task plans and
 PR descriptions. A requirement may span multiple tasks; it is only marked
@@ -138,9 +139,8 @@ complete when every task covering it is closed.
 
 ### Task
 
-An **issue in the spoke whose code it changes**, labeled `cc:task`, linked
-from the milestone's task list and linking back to the milestone. Body
-structure:
+An **issue in the spoke whose code it changes**, labeled `cc:task`, attached
+to its milestone as a sub-issue. Body structure:
 
 ```markdown
 ## Goal
@@ -272,7 +272,7 @@ hub).
 |------|--------------|
 | `codecrew status` | Where the project is: open milestones, task states, raised gates. |
 | `codecrew milestone new` | Creates a milestone tracking issue in the hub from the template; updates ROADMAP.md. |
-| `codecrew task new --milestone <id> --repo <spoke>` | Creates a task issue in the spoke from the template; links it into the milestone's task list. |
+| `codecrew task new --milestone <id> --repo <spoke>` | Creates a task issue in the spoke from the template; attaches it to the milestone as a sub-issue. |
 | `codecrew task start <ref>` | Assigns the caller's identity, verifies a plan is present (refuses to start a planless nontrivial task), creates the working branch. |
 | `codecrew checkpoint <ref> --question "…"` | Raises a human gate: posts the question as a comment, applies `cc:needs-decision`. |
 | `codecrew task finish <ref>` | The gatekeeper: verifies a PR exists, CI checks are green, an approving review exists from a non-doer, and deviations referenced in the PR body have recorded comments — then merges (rebase) and closes. Refuses otherwise, with the specific unmet condition. In a solo-tier project (§5) where author and operator are the same principal, the non-doer approval degrades to an explicit operator confirmation, recorded as a PR comment. |

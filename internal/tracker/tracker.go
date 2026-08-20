@@ -83,8 +83,11 @@ type Tracker interface {
 	IssueBody(ref IssueRef) (string, error)
 	// CreateIssue opens an issue and returns its ref.
 	CreateIssue(repo, title, body string, labels []string) (IssueRef, error)
-	// UpdateBody replaces an issue's body.
-	UpdateBody(ref IssueRef, body string) error
+	// AddSubIssue attaches child to parent as a GitHub sub-issue; the parent
+	// tracks progress natively, so nothing is hand-maintained.
+	AddSubIssue(parent, child IssueRef) error
+	// SubIssues lists the refs attached to parent as sub-issues.
+	SubIssues(parent IssueRef) ([]IssueRef, error)
 	// Comment posts an issue (or PR) comment.
 	Comment(ref IssueRef, body string) error
 	// AddLabel applies a label.
@@ -109,25 +112,6 @@ type Tracker interface {
 	// HasMilestoneDoc reports whether docs/milestones/<n>-*.md exists on the
 	// default branch of repo.
 	HasMilestoneDoc(repo string, n int) (bool, error)
-}
-
-var taskRefPattern = regexp.MustCompile(`(?m)^\s*-\s*\[[ xX]\]\s*(?:([\w.-]+/[\w.-]+)#(\d+)|#(\d+))`)
-
-// ParseTaskRefs extracts task references from a milestone issue body's task
-// list. Qualified refs (owner/repo#N) and short refs (#N, resolved against
-// hubRepo) are both accepted.
-func ParseTaskRefs(body, hubRepo string) []IssueRef {
-	var refs []IssueRef
-	for _, m := range taskRefPattern.FindAllStringSubmatch(body, -1) {
-		if m[1] != "" {
-			n, _ := strconv.Atoi(m[2])
-			refs = append(refs, IssueRef{Repo: m[1], Number: n})
-		} else {
-			n, _ := strconv.Atoi(m[3])
-			refs = append(refs, IssueRef{Repo: hubRepo, Number: n})
-		}
-	}
-	return refs
 }
 
 // InferState derives a task's lifecycle state from tracker signals, most
@@ -221,24 +205,6 @@ func section(body, heading string) string {
 		rest = rest[:i]
 	}
 	return rest
-}
-
-// AppendTask inserts a task-list entry into the milestone body's Tasks
-// section, preserving surrounding content.
-func AppendTask(body string, ref IssueRef, title string) string {
-	entry := fmt.Sprintf("- [ ] %s — %s", ref, title)
-	_, rest, found := strings.Cut(body, "## Tasks")
-	if !found {
-		return strings.TrimRight(body, "\n") + "\n\n## Tasks\n" + entry + "\n"
-	}
-	sectionEnd := len(rest)
-	if i := strings.Index(rest, "\n## "); i >= 0 {
-		sectionEnd = i
-	}
-	head := body[:len(body)-len(rest)]
-	sec := strings.TrimRight(rest[:sectionEnd], "\n")
-	tail := rest[sectionEnd:]
-	return head + sec + "\n" + entry + "\n" + tail
 }
 
 // Record is one Decision or Deviation captured in a comment.

@@ -1,40 +1,6 @@
 package tracker
 
-import (
-	"reflect"
-	"testing"
-)
-
-func TestParseTaskRefs(t *testing.T) {
-	body := `## Goal
-Something.
-
-## Tasks
-- [ ] radiusred/codecrew#3 — lint workflow
-- [x] radiusred/other-repo#12 — done thing
-- [ ] #7 — short ref resolves to hub
-- not a task item #99
-* [ ] #100 — wrong bullet marker is still not matched by spec format
-
-## Gates
-- [ ] this gate line has no issue ref
-`
-	got := ParseTaskRefs(body, "radiusred/hub")
-	want := []IssueRef{
-		{Repo: "radiusred/codecrew", Number: 3},
-		{Repo: "radiusred/other-repo", Number: 12},
-		{Repo: "radiusred/hub", Number: 7},
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("ParseTaskRefs = %v, want %v", got, want)
-	}
-}
-
-func TestParseTaskRefsEmpty(t *testing.T) {
-	if refs := ParseTaskRefs("## Tasks\n\n_none yet_\n", "o/r"); len(refs) != 0 {
-		t.Errorf("expected no refs, got %v", refs)
-	}
-}
+import "testing"
 
 func TestParseRef(t *testing.T) {
 	cases := []struct {
@@ -80,26 +46,6 @@ func TestPlanPresent(t *testing.T) {
 	planned := "## Goal\nX\n\n## Plan\n- change the thing\n\n## Ask-the-human points\nNone."
 	if !PlanPresent(planned) {
 		t.Error("real plan should count as present")
-	}
-}
-
-func TestAppendTask(t *testing.T) {
-	body := "## Goal\nG\n\n## Tasks\n- [x] o/r#1 — done\n\n## Gates\n- CI green\n"
-	got := AppendTask(body, IssueRef{"o/r", 2}, "next thing")
-	want := "## Goal\nG\n\n## Tasks\n- [x] o/r#1 — done\n- [ ] o/r#2 — next thing\n\n## Gates\n- CI green\n"
-	if got != want {
-		t.Errorf("AppendTask:\n%q\nwant:\n%q", got, want)
-	}
-	// Refs must round-trip through the parser.
-	refs := ParseTaskRefs(got, "o/hub")
-	if len(refs) != 2 || refs[1].Number != 2 {
-		t.Errorf("appended entry not parseable: %v", refs)
-	}
-	// Empty Tasks section.
-	empty := "## Goal\nG\n\n## Tasks\n\n## Gates\nnone\n"
-	refs = ParseTaskRefs(AppendTask(empty, IssueRef{"o/r", 5}, "t"), "o/hub")
-	if len(refs) != 1 || refs[0].Number != 5 {
-		t.Errorf("append into empty section not parseable: %v", refs)
 	}
 }
 
