@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/radiusred/codecrew/internal/cli"
+	"github.com/radiusred/gh-codecrew/internal/cli"
 )
 
 func main() {

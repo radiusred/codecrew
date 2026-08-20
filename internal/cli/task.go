@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/radiusred/codecrew/internal/tracker"
+	"github.com/radiusred/gh-codecrew/internal/tracker"
 )
 
 const taskTemplate = `## Goal

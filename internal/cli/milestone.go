@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/radiusred/codecrew/internal/tracker"
+	"github.com/radiusred/gh-codecrew/internal/tracker"
 )
 
 // Tasks have no body section: they are attached as GitHub sub-issues, which
