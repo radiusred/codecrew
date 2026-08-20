@@ -190,6 +190,14 @@ structured prefix so synthesis can find them:
 **Why:** <rationale>
 ```
 
+A decision made at a human gate uses the resolution form and is gathered as
+a Decision:
+
+```markdown
+**Gate resolved:** <what was decided>
+**Trade-off:** <what was weighed, if anything>
+```
+
 A deviation that changes what a requirement means, or an ask-the-human point
 being reached, raises a human gate (§8) instead of being silently recorded.
 
@@ -315,8 +323,11 @@ Three independent layers, attacking different failure modes:
 3. **Human gates** — pre-marked ask-the-human points plus ad-hoc
    `checkpoint`s. Catch the boundary cases where capability doesn't help:
    "should this task be done as specified at all." A `cc:needs-decision` label
-   blocks `task finish` until a human removes it, and the resolution comment
-   becomes part of the decision record.
+   blocks `task finish` until a human removes it, and the resolution must be
+   recorded as a `**Gate resolved:**` comment (§4) so it is gathered into the
+   milestone record as a Decision — `task finish` refuses
+   (`refused[GATE_UNRECORDED]`) while a raised gate has no resolution comment,
+   even after the label is removed.
 
 ## 9. Environments
 
