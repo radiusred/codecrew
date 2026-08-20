@@ -1,0 +1,6 @@
+codecrew: "0.1"
+hub: self
+
+# Advisory role routing, read by whoever dispatches agents (see SPEC.md §5).
+# Populated when the first milestone assigns roles.
+roles: {}
