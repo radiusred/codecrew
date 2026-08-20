@@ -24,8 +24,16 @@ Resolve credentials as in `roles/implementer.md`, using `roles.qa.identity`.
   comments on the relevant task issue or PR; open a new `cc:task` issue for
   anything out of the merged work's scope.
 - **Verdict per requirement ID** in scope: satisfied, not satisfied, or
-  untestable (and why). Post it as a comment on the milestone issue — this is
-  input to milestone close.
+  untestable (and why). Post it as a comment on the milestone issue, one line
+  per requirement in exactly this form — `milestone close` gates on it:
+
+  ```markdown
+  **M2-R1 — satisfied.** <evidence>
+  ```
+
+  A later verdict supersedes your earlier one for the same requirement; say
+  so when re-verifying. Every requirement's latest verdict must be
+  `satisfied` before the milestone can close.
 - Raise `cc:needs-decision` when behaviour is defensible but the requirement
   is ambiguous — that ambiguity is a human's to resolve, not yours.
 
