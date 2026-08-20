@@ -243,6 +243,25 @@ unsatisfiable. App private keys live outside the repo (by convention
 tokens are minted per invocation. A role with no identity (`~`) acts as the
 human operator.
 
+### Identity tiers
+
+App identities are optional infrastructure, required only where a
+GitHub-native approval must come from a party with no human account:
+
+1. **Solo** — one human, agents act under the operator's own auth. The whole
+   protocol works on `gh auth login` alone; the review gate degrades to
+   explicit operator confirmation (§6) because GitHub forbids self-approval.
+2. **Multi-human team** — a colleague satisfies the review gate natively; app
+   identities add only attribution (distinguishing an agent's work from its
+   dispatcher's).
+3. **Enforced review with one human, or agent-reviews-agent** — app
+   identities are required: the author and approver must be distinct
+   principals, and each automated role needs its own.
+
+Credential resolution is uniform across tiers: orchestrator-injected env vars
+(`GITHUB_CLIENT_ID` / `GITHUB_PRIVATE_KEY` / `GITHUB_INSTALLATION_ID`), then a
+locally-held private key, then the operator's `gh` auth.
+
 ## 6. Workflow verbs
 
 The CLI's surface, and therefore the backend interface. Every verb is safe to
@@ -256,7 +275,7 @@ hub).
 | `codecrew task new --milestone <id> --repo <spoke>` | Creates a task issue in the spoke from the template; links it into the milestone's task list. |
 | `codecrew task start <ref>` | Assigns the caller's identity, verifies a plan is present (refuses to start a planless nontrivial task), creates the working branch. |
 | `codecrew checkpoint <ref> --question "…"` | Raises a human gate: posts the question as a comment, applies `cc:needs-decision`. |
-| `codecrew task finish <ref>` | The gatekeeper: verifies a PR exists, CI checks are green, an approving review exists from a non-doer, and deviations referenced in the PR body have recorded comments — then merges (rebase) and closes. Refuses otherwise, with the specific unmet condition. |
+| `codecrew task finish <ref>` | The gatekeeper: verifies a PR exists, CI checks are green, an approving review exists from a non-doer, and deviations referenced in the PR body have recorded comments — then merges (rebase) and closes. Refuses otherwise, with the specific unmet condition. In a solo-tier project (§5) where author and operator are the same principal, the non-doer approval degrades to an explicit operator confirmation, recorded as a PR comment. |
 | `codecrew milestone close <id>` | Verifies all tasks closed and milestone gates met; gathers every Decision/Deviation comment across the milestone's tasks into raw material for the doc-synthesizer; refuses to close until the milestone document PR is merged. |
 
 Verbs exit nonzero with a machine-readable reason when a gate blocks them, so
