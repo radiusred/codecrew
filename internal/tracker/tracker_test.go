@@ -36,6 +36,92 @@ func TestParseTaskRefsEmpty(t *testing.T) {
 	}
 }
 
+func TestParseRef(t *testing.T) {
+	cases := []struct {
+		in   string
+		want IssueRef
+		ok   bool
+	}{
+		{"12", IssueRef{"o/def", 12}, true},
+		{"#12", IssueRef{"o/def", 12}, true},
+		{"radiusred/codecrew#7", IssueRef{"radiusred/codecrew", 7}, true},
+		{"nonsense", IssueRef{}, false},
+		{"owner/repo", IssueRef{}, false},
+	}
+	for _, c := range cases {
+		got, err := ParseRef(c.in, "o/def")
+		if c.ok && (err != nil || got != c.want) {
+			t.Errorf("ParseRef(%q) = %v, %v; want %v", c.in, got, err, c.want)
+		}
+		if !c.ok && err == nil {
+			t.Errorf("ParseRef(%q) should fail", c.in)
+		}
+	}
+}
+
+func TestNextMilestoneNumber(t *testing.T) {
+	titles := []string{"M1: First", "M3: Skipped ahead", "not a milestone", "M2: Second"}
+	if got := NextMilestoneNumber(titles); got != 4 {
+		t.Errorf("NextMilestoneNumber = %d, want 4", got)
+	}
+	if got := NextMilestoneNumber(nil); got != 1 {
+		t.Errorf("NextMilestoneNumber(empty) = %d, want 1", got)
+	}
+}
+
+func TestPlanPresent(t *testing.T) {
+	planless := "## Goal\nX\n\n## Plan\n" + PlanPlaceholder + "\n\n## Ask-the-human points\nNone."
+	if PlanPresent(planless) {
+		t.Error("placeholder plan should not count as present")
+	}
+	if PlanPresent("## Goal\nX\n\n## Ask-the-human points\nNone.") {
+		t.Error("missing Plan section should not count as present")
+	}
+	planned := "## Goal\nX\n\n## Plan\n- change the thing\n\n## Ask-the-human points\nNone."
+	if !PlanPresent(planned) {
+		t.Error("real plan should count as present")
+	}
+}
+
+func TestAppendTask(t *testing.T) {
+	body := "## Goal\nG\n\n## Tasks\n- [x] o/r#1 — done\n\n## Gates\n- CI green\n"
+	got := AppendTask(body, IssueRef{"o/r", 2}, "next thing")
+	want := "## Goal\nG\n\n## Tasks\n- [x] o/r#1 — done\n- [ ] o/r#2 — next thing\n\n## Gates\n- CI green\n"
+	if got != want {
+		t.Errorf("AppendTask:\n%q\nwant:\n%q", got, want)
+	}
+	// Refs must round-trip through the parser.
+	refs := ParseTaskRefs(got, "o/hub")
+	if len(refs) != 2 || refs[1].Number != 2 {
+		t.Errorf("appended entry not parseable: %v", refs)
+	}
+	// Empty Tasks section.
+	empty := "## Goal\nG\n\n## Tasks\n\n## Gates\nnone\n"
+	refs = ParseTaskRefs(AppendTask(empty, IssueRef{"o/r", 5}, "t"), "o/hub")
+	if len(refs) != 1 || refs[0].Number != 5 {
+		t.Errorf("append into empty section not parseable: %v", refs)
+	}
+}
+
+func TestExtractRecords(t *testing.T) {
+	src := IssueRef{"o/r", 4}
+	comments := []Comment{
+		{Author: "cody", Body: "**Decision:** use X\n**Trade-off:** Y\n**Rejected:** Z"},
+		{Author: "human", Body: "just a chat comment mentioning **Deviation:** midway"},
+		{Author: "cody", Body: "  **Deviation:** skipped W\n**Why:** unnecessary"},
+	}
+	records := ExtractRecords(src, comments)
+	if len(records) != 2 {
+		t.Fatalf("got %d records, want 2", len(records))
+	}
+	if records[0].Kind != "Decision" || records[1].Kind != "Deviation" {
+		t.Errorf("kinds = %s, %s", records[0].Kind, records[1].Kind)
+	}
+	if records[0].Source != "o/r#4" {
+		t.Errorf("source = %q", records[0].Source)
+	}
+}
+
 func TestInferState(t *testing.T) {
 	cases := []struct {
 		name string
