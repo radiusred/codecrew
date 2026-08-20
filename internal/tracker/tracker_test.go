@@ -55,16 +55,45 @@ func TestExtractRecords(t *testing.T) {
 		{Author: "cody", Body: "**Decision:** use X\n**Trade-off:** Y\n**Rejected:** Z"},
 		{Author: "human", Body: "just a chat comment mentioning **Deviation:** midway"},
 		{Author: "cody", Body: "  **Deviation:** skipped W\n**Why:** unnecessary"},
+		{Author: "human", Body: "**Gate resolved:** rename the repo\n**Trade-off:** redirects vs a second repo"},
 	}
 	records := ExtractRecords(src, comments)
-	if len(records) != 2 {
-		t.Fatalf("got %d records, want 2", len(records))
+	if len(records) != 3 {
+		t.Fatalf("got %d records, want 3", len(records))
 	}
 	if records[0].Kind != "Decision" || records[1].Kind != "Deviation" {
 		t.Errorf("kinds = %s, %s", records[0].Kind, records[1].Kind)
 	}
+	if records[2].Kind != "Decision" {
+		t.Errorf("gate resolution kind = %s, want Decision", records[2].Kind)
+	}
 	if records[0].Source != "o/r#4" {
 		t.Errorf("source = %q", records[0].Source)
+	}
+}
+
+func TestUnresolvedGates(t *testing.T) {
+	gate := Comment{Author: "cody", Body: "**Gate raised:** rename or split?"}
+	resolved := Comment{Author: "human", Body: "**Gate resolved:** rename"}
+	decision := Comment{Author: "human", Body: "**Decision:** rename"}
+	chat := Comment{Author: "human", Body: "thinking about it"}
+	cases := []struct {
+		name     string
+		comments []Comment
+		want     int
+	}{
+		{"no gates", []Comment{chat, decision}, 0},
+		{"gate then resolution", []Comment{gate, resolved}, 0},
+		{"gate then decision counts", []Comment{gate, decision}, 0},
+		{"gate with only chat after", []Comment{gate, chat}, 1},
+		{"resolution before gate does not count", []Comment{resolved, gate}, 1},
+		{"second gate after resolution is unresolved", []Comment{gate, resolved, gate}, 1},
+		{"one trailing resolution covers earlier gates", []Comment{gate, gate, resolved}, 0},
+	}
+	for _, c := range cases {
+		if got := len(UnresolvedGates(c.comments)); got != c.want {
+			t.Errorf("%s: got %d unresolved, want %d", c.name, got, c.want)
+		}
 	}
 }
 

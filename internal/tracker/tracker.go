@@ -217,7 +217,9 @@ type Record struct {
 }
 
 // ExtractRecords finds Decision/Deviation comments per the SPEC §4
-// convention (body starts with **Decision:** or **Deviation:**).
+// convention (body starts with **Decision:** or **Deviation:**). A gate
+// resolution (**Gate resolved:**, SPEC §8) is a decision made at a human
+// gate, so it is captured as a Decision record.
 func ExtractRecords(source IssueRef, comments []Comment) []Record {
 	var records []Record
 	for _, c := range comments {
@@ -225,6 +227,8 @@ func ExtractRecords(source IssueRef, comments []Comment) []Record {
 		var kind string
 		switch {
 		case strings.HasPrefix(trimmed, "**Decision:**"):
+			kind = "Decision"
+		case strings.HasPrefix(trimmed, "**Gate resolved:**"):
 			kind = "Decision"
 		case strings.HasPrefix(trimmed, "**Deviation:**"):
 			kind = "Deviation"
@@ -240,4 +244,26 @@ func ExtractRecords(source IssueRef, comments []Comment) []Record {
 		})
 	}
 	return records
+}
+
+// UnresolvedGates returns the **Gate raised:** comments that have no later
+// resolution record (**Gate resolved:** or **Decision:**). A single trailing
+// resolution covers every gate raised before it — a human may answer several
+// questions in one comment; the label removal remains the hard block.
+func UnresolvedGates(comments []Comment) []Comment {
+	var unresolved []Comment
+	lastResolution := -1
+	for i := len(comments) - 1; i >= 0; i-- {
+		trimmed := strings.TrimSpace(comments[i].Body)
+		if strings.HasPrefix(trimmed, "**Gate resolved:**") || strings.HasPrefix(trimmed, "**Decision:**") {
+			lastResolution = i
+			break
+		}
+	}
+	for i, c := range comments {
+		if strings.HasPrefix(strings.TrimSpace(c.Body), "**Gate raised:**") && i > lastResolution {
+			unresolved = append(unresolved, c)
+		}
+	}
+	return unresolved
 }

@@ -147,7 +147,12 @@ func checkpoint(w io.Writer, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := c.t.Comment(ref, "**Gate raised:** "+*question); err != nil {
+	msg := "**Gate raised:** " + *question + "\n\n" +
+		"Resolve by replying with a comment starting `**Gate resolved:**` — the decision, " +
+		"and the trade-off if one was weighed — then removing the `cc:needs-decision` label. " +
+		"The resolution is gathered into the milestone record; `task finish` refuses while " +
+		"the label is present or the gate lacks a resolution comment."
+	if err := c.t.Comment(ref, msg); err != nil {
 		return err
 	}
 	if err := c.t.AddLabel(ref, tracker.LabelNeedsDecision); err != nil {
@@ -188,6 +193,14 @@ func taskFinish(w io.Writer, args []string) error {
 	}
 	if tracker.HasLabel(task, tracker.LabelNeedsDecision) {
 		return refuse("GATED", "%s has %s raised — a human must resolve it and remove the label", ref, tracker.LabelNeedsDecision)
+	}
+	comments, err := c.t.Comments(ref)
+	if err != nil {
+		return err
+	}
+	if unresolved := tracker.UnresolvedGates(comments); len(unresolved) > 0 {
+		return refuse("GATE_UNRECORDED", "%d gate(s) on %s lack a resolution record — reply with **Gate resolved:** stating the decision (SPEC §8): %s",
+			len(unresolved), ref, unresolved[0].URL)
 	}
 
 	prs, err := c.t.ClosingPRs(ref, false)
