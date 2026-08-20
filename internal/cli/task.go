@@ -239,11 +239,17 @@ func taskFinish(w io.Writer, args []string) error {
 		if err != nil {
 			return err
 		}
-		if viewer == pr.Author {
-			return refuse("SELF_CONFIRM", "--operator-confirm requires an identity other than the PR author @%s", pr.Author)
+		// Crew identities can never waive review; a human operator can —
+		// including on their own PR, where no distinct principal exists
+		// (pure solo tier, SPEC §5) — and the record says so.
+		if strings.HasSuffix(viewer, "[bot]") || c.roleFor(viewer) != "" {
+			return refuse("SELF_CONFIRM", "--operator-confirm requires a human operator; @%s is a crew identity", viewer)
 		}
 		prRef := tracker.IssueRef{Repo: pr.Repo, Number: pr.Number}
 		msg := fmt.Sprintf("**Operator confirmation:** reviewed and accepted by @%s in place of a formal approval (solo tier, SPEC §6).", viewer)
+		if viewer == pr.Author {
+			msg = fmt.Sprintf("**Operator confirmation:** reviewed and accepted by @%s as both author and operator (pure solo tier, SPEC §6) — no independent principal exists in this project.", viewer)
+		}
 		if err := c.t.Comment(prRef, msg); err != nil {
 			return err
 		}
