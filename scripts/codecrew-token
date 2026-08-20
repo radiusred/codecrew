@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# codecrew-token <app-slug> — mint a GitHub App installation token for a role identity.
+#
+# The app's private key must exist at ~/.config/codecrew/<app-slug>.*.private-key.pem
+# (never committed). App and installation IDs are resolved via `gh`, which must be
+# authenticated as someone who can list the org's installations. This script is
+# bootstrap tooling; the codecrew CLI will absorb it.
+set -euo pipefail
+
+slug=${1:?usage: codecrew-token <app-slug>}
+org=${CODECREW_ORG:-$(gh repo view --json owner -q .owner.login)}
+
+pem=$(ls "$HOME/.config/codecrew/$slug".*.private-key.pem 2>/dev/null | head -1)
+[[ -n "$pem" ]] || { echo "codecrew-token: no private key for '$slug' in ~/.config/codecrew" >&2; exit 1; }
+
+read -r app_id inst_id < <(gh api "/orgs/$org/installations" \
+  --jq ".installations[] | select(.app_slug == \"$slug\") | \"\(.app_id) \(.id)\"")
+[[ -n "${app_id:-}" && -n "${inst_id:-}" ]] || { echo "codecrew-token: app '$slug' not installed on org '$org'" >&2; exit 1; }
+
+b64() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+now=$(date +%s)
+header=$(printf '{"alg":"RS256","typ":"JWT"}' | b64)
+payload=$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' "$((now - 60))" "$((now + 540))" "$app_id" | b64)
+sig=$(printf '%s.%s' "$header" "$payload" | openssl dgst -sha256 -sign "$pem" -binary | b64)
+
+curl -sf -X POST \
+  -H "Authorization: Bearer $header.$payload.$sig" \
+  -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/app/installations/$inst_id/access_tokens" | jq -r .token

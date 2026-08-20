@@ -2,5 +2,20 @@ codecrew: "0.1"
 hub: self
 
 # Advisory role routing, read by whoever dispatches agents (see SPEC.md §5).
-# Populated when the first milestone assigns roles.
-roles: {}
+# `identity` names the GitHub App the role acts as; its private key lives
+# outside the repo at ~/.config/codecrew/<slug>.*.private-key.pem and tokens
+# are minted with scripts/codecrew-token.
+roles:
+  implementer:
+    harness: claude-code
+    model: claude-fable-5
+    identity: radiusred-cody
+  reviewer:
+    harness: codex
+    identity: ~ # human operator reviews during bootstrap
+  qa:
+    harness: codex
+    identity: radiusred-testy
+  doc-synthesizer:
+    harness: claude-code
+    identity: radiusred-wordy
