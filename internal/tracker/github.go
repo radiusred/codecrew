@@ -10,15 +10,25 @@ import (
 // GitHub implements Tracker over the gh CLI.
 type GitHub struct{}
 
-func (GitHub) OpenMilestones(hub string) ([]Milestone, error) {
-	return listMilestones(hub, "open")
+func (g GitHub) OpenMilestones(hub string) ([]Milestone, error) {
+	milestones, err := listMilestones(hub, "open")
+	if err != nil {
+		return nil, err
+	}
+	for i := range milestones {
+		tasks, err := g.SubIssues(milestones[i].Ref)
+		if err != nil {
+			return nil, err
+		}
+		milestones[i].Tasks = tasks
+	}
+	return milestones, nil
 }
 
 func listMilestones(hub, state string) ([]Milestone, error) {
 	var issues []struct {
 		Number int    `json:"number"`
 		Title  string `json:"title"`
-		Body   string `json:"body"`
 	}
 	path := fmt.Sprintf("repos/%s/issues?labels=cc:milestone&state=%s&per_page=100", hub, state)
 	if err := gh.JSON(&issues, "api", path); err != nil {
@@ -29,10 +39,42 @@ func listMilestones(hub, state string) ([]Milestone, error) {
 		milestones = append(milestones, Milestone{
 			Ref:   IssueRef{Repo: hub, Number: is.Number},
 			Title: is.Title,
-			Tasks: ParseTaskRefs(is.Body, hub),
 		})
 	}
 	return milestones, nil
+}
+
+func (GitHub) AddSubIssue(parent, child IssueRef) error {
+	var issue struct {
+		ID int64 `json:"id"`
+	}
+	if err := gh.JSON(&issue, "api", fmt.Sprintf("repos/%s/issues/%d", child.Repo, child.Number)); err != nil {
+		return err
+	}
+	_, err := gh.Run("api", "-X", "POST",
+		fmt.Sprintf("repos/%s/issues/%d/sub_issues", parent.Repo, parent.Number),
+		"-F", fmt.Sprintf("sub_issue_id=%d", issue.ID))
+	return err
+}
+
+func (GitHub) SubIssues(parent IssueRef) ([]IssueRef, error) {
+	var subs []struct {
+		Number        int    `json:"number"`
+		RepositoryURL string `json:"repository_url"`
+	}
+	path := fmt.Sprintf("repos/%s/issues/%d/sub_issues?per_page=100", parent.Repo, parent.Number)
+	if err := gh.JSON(&subs, "api", path); err != nil {
+		return nil, err
+	}
+	refs := make([]IssueRef, 0, len(subs))
+	for _, s := range subs {
+		repo := parent.Repo
+		if i := strings.Index(s.RepositoryURL, "/repos/"); i >= 0 {
+			repo = s.RepositoryURL[i+len("/repos/"):]
+		}
+		refs = append(refs, IssueRef{Repo: repo, Number: s.Number})
+	}
+	return refs, nil
 }
 
 func (GitHub) AllMilestoneTitles(hub string) ([]string, error) {
@@ -68,12 +110,6 @@ func (GitHub) CreateIssue(repo, title, body string, labels []string) (IssueRef, 
 		return IssueRef{}, err
 	}
 	return IssueRef{Repo: repo, Number: created.Number}, nil
-}
-
-func (GitHub) UpdateBody(ref IssueRef, body string) error {
-	_, err := gh.Run("api", "-X", "PATCH",
-		fmt.Sprintf("repos/%s/issues/%d", ref.Repo, ref.Number), "-f", "body="+body)
-	return err
 }
 
 func (GitHub) Comment(ref IssueRef, body string) error {

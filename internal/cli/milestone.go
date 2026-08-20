@@ -12,13 +12,13 @@ import (
 	"github.com/radiusred/codecrew/internal/tracker"
 )
 
+// Tasks have no body section: they are attached as GitHub sub-issues, which
+// the milestone issue tracks natively.
 const milestoneTemplate = `## Goal
 %s
 
 ## Requirements
 _Add requirements as **M%d-R1** — ... lines._
-
-## Tasks
 
 ## Gates
 _What "done" means beyond CI: e2e suites, manual UAT, sign-offs._

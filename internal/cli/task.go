@@ -67,15 +67,10 @@ func taskNew(w io.Writer, args []string) error {
 	if err != nil {
 		return err
 	}
-
-	milestoneBody, err := c.t.IssueBody(milestone.Ref)
-	if err != nil {
+	if err := c.t.AddSubIssue(milestone.Ref, ref); err != nil {
 		return err
 	}
-	if err := c.t.UpdateBody(milestone.Ref, tracker.AppendTask(milestoneBody, ref, *title)); err != nil {
-		return err
-	}
-	fmt.Fprintf(w, "created task %s, linked into %s\n", ref, milestone.Ref)
+	fmt.Fprintf(w, "created task %s as a sub-issue of %s\n", ref, milestone.Ref)
 	return nil
 }
 
