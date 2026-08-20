@@ -112,6 +112,8 @@ type Tracker interface {
 	// HasMilestoneDoc reports whether docs/milestones/<n>-*.md exists on the
 	// default branch of repo.
 	HasMilestoneDoc(repo string, n int) (bool, error)
+	// FileContent fetches a file from the default branch of repo.
+	FileContent(repo, path string) ([]byte, error)
 }
 
 // InferState derives a task's lifecycle state from tracker signals, most

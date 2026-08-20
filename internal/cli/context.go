@@ -34,6 +34,25 @@ func load() (*ctx, error) {
 	}, nil
 }
 
+// roleFor resolves a viewer login to its role name via the routing table.
+// Spokes carry only the pointer config (SPEC §5), so when the local file has
+// no roles the hub's .codecrew.yml is fetched; an unreadable hub config
+// degrades to no role rather than failing the verb — routing is advisory.
+func (c *ctx) roleFor(login string) string {
+	if len(c.cfg.Roles) > 0 {
+		return c.cfg.RoleFor(login)
+	}
+	data, err := c.t.FileContent(c.hub, ".codecrew.yml")
+	if err != nil {
+		return ""
+	}
+	hubCfg, err := config.Parse(data)
+	if err != nil {
+		return ""
+	}
+	return hubCfg.RoleFor(login)
+}
+
 // refusal is a blocked gate: a machine-readable code plus a human detail.
 // Verbs exit nonzero with "refused[CODE]: detail" so agents can act on the
 // specific unmet condition (SPEC.md §6).
