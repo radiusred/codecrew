@@ -62,6 +62,10 @@ model's judgment:
 - **Documentation is synthesis, not maintenance.** The only documents the
   framework produces are per-milestone "why" documents, compiled at milestone
   close from the decisions and deviations recorded during the work.
+- **Intentional platform footprint.** The protocol knows which GitHub
+  features it depends on and what plan tier they need (§5, Platform
+  requirements); a dependency that would exclude free-plan adopters is taken
+  knowingly or not at all.
 
 ## 3. Topology: hub and spokes
 
@@ -85,6 +89,44 @@ permissions) works without convention.
 into any repo can find the coordination point. In the hub it declares
 `hub: self`; in a spoke it names the hub (`hub: owner/repo`).
 
+### Choosing a hub
+
+The hub is wherever the pointer files say it is — any repo the project owns
+can serve. The decision ladder:
+
+1. **`hub: self`** for a single-repo project. The degenerate case above;
+   nothing to decide.
+2. **The org's `.github` repo** for a multi-repo org whose delivery record
+   can be public. The hub's cargo — roadmap, milestone issues, milestone
+   documents, role contracts — is org-level coordination state, which is what
+   `.github` exists to hold. The caveat is visibility: `.github` repos are
+   public by convention, and milestone issues carry goals, decisions, and
+   gate discussions, so this choice publishes the delivery narrative even
+   when spoke repos are private.
+3. **A dedicated hub repo** when the tracking must stay private, or when one
+   org runs several projects that should not share a delivery stream.
+
+Three constraints make every rung workable:
+
+- **One hub per spoke.** The pointer file has a single `hub:` field; a repo
+  belongs to one delivery stream at a time.
+- **One milestone number-line per hub.** Milestone numbering scans the hub's
+  milestone issues, so a hub is one serialized stream of work. An org running
+  several concurrent projects wants a hub per project, not interleaved
+  numbering in a shared one.
+- **Multiple hubs per org coexist.** All protocol state — milestone issues,
+  numbering, labels, the roadmap — is hub-scoped. The only org-global pieces
+  are the role App identities, and those are meant to be shared: the same
+  implementer identity can serve every hub in the org.
+
+**The hub is not the framework's repo.** `radiusred/gh-codecrew` is both the
+distribution point for the CLI (`gh extension install radiusred/gh-codecrew`)
+and this project's own hub — a dogfooding coincidence, not a pattern.
+Adopters install the extension from it and point their `.codecrew.yml` at a
+repo they own; the protocol requires write access to the hub (labels,
+sub-issue attachment, milestone close), so a hub you don't control is not a
+hub.
+
 ### Growth and restructuring
 
 - **Adding a spoke:** create the repo, add a `.codecrew.yml` naming the hub.
@@ -92,12 +134,24 @@ into any repo can find the coordination point. In the hub it declares
 - **Cross-repo references** use the qualified form `owner/repo#123`. Short
   `#123` references remain valid forever within their own repo because issues
   never leave it.
-- **Hub extraction** (the original repo becomes one spoke among equals):
-  supported but rarely needed — a repo can serve as hub indefinitely. If
-  extracted: closed milestone documents **stay where they were committed**
-  (they are point-in-time snapshots; moving them rewrites the audit trail);
-  only the roadmap and open milestone tracking issues move (GitHub issue
-  transfer preserves comments and leaves redirects); pointer files are updated.
+- **Hub changes happen at milestone boundaries.** The protocol's only live
+  state is the open milestone and its open sub-issues; everything else is
+  inert record that nothing re-reads. So a hub move (splitting a project onto
+  its own hub, extracting the hub from a repo that outgrew hub-is-spoke) is:
+  close the current milestone in the old hub as normal, repoint each spoke's
+  `.codecrew.yml` in a one-line PR, and start the next milestone in the new
+  hub — a fresh number-line. History stays where it happened: closed
+  milestone issues, milestone documents, and decision trails are
+  point-in-time snapshots, and moving them rewrites the audit trail. Leave a
+  tombstone row in the old hub's ROADMAP naming where the stream continued.
+  Worst case this closes a milestone slightly early with requirements carried
+  forward — cheap, and it keeps every milestone's record gathered from one
+  hub and synthesized into one document.
+- **Mid-flight transfer is the discouraged exception.** GitHub issue transfer
+  preserves comments and leaves redirects, but drops label associations and
+  is unverified for sub-issue links — moving an *open* milestone risks the
+  record the boundary rule keeps intact. Reach for it only when a boundary
+  close is genuinely impossible.
 - **Repo splits:** open task issues are transferred with GitHub's issue
   transfer. Transfer drops label associations, so conventions must be cheap to
   re-apply (re-label, re-attach the sub-issue link to the milestone).
@@ -269,6 +323,29 @@ GitHub-native approval must come from a party with no human account:
 Credential resolution is uniform across tiers: orchestrator-injected env vars
 (`GITHUB_CLIENT_ID` / `GITHUB_PRIVATE_KEY` / `GITHUB_INSTALLATION_ID`), then a
 locally-held private key, then the operator's `gh` auth.
+
+### Platform requirements
+
+Everything the protocol *requires* is available on every GitHub plan,
+public or private: issues and sub-issues, labels, comments, pull requests,
+rebase merging, GitHub Apps, and CI check reading. A free-plan solo operator
+loses nothing.
+
+Features CodeCrew benefits from but deliberately does **not** require,
+because they are plan- or visibility-gated on private repos:
+
+- **Branch rulesets / required status checks and reviews** — free on public
+  repos; private repos need a paid plan. Without them, `task finish` *is*
+  the enforcement: it refuses on red checks and missing approval even where
+  GitHub wouldn't block the merge button.
+- **Auto-merge** — a convenience some hubs enable; `task finish` merges
+  through the API and never depends on it.
+- **Actions minutes** — private repos have quotas; the protocol reads check
+  results but never defines CI, so a spoke's CI budget is its own affair.
+
+The standing obligation: any future protocol dependency on a GitHub feature
+states its plan availability — public/private differences included — at the
+moment it is introduced.
 
 ## 6. Workflow verbs
 
