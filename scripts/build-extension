@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Cross-compile cmd/codecrew into the gh-extension binary naming scheme.
+# Invoked by cli/gh-extension-precompile with the release tag as $1; binaries
+# land in dist/ as gh-codecrew_<tag>_<os>-<arch>[.exe].
+set -euo pipefail
+
+tag=${1:?release tag required}
+mkdir -p dist
+
+platforms=(
+  linux-amd64 linux-arm64
+  darwin-amd64 darwin-arm64
+  windows-amd64
+)
+
+for platform in "${platforms[@]}"; do
+  os=${platform%-*} arch=${platform#*-}
+  ext=""
+  [[ $os == windows ]] && ext=".exe"
+  echo "building $platform"
+  CGO_ENABLED=0 GOOS=$os GOARCH=$arch \
+    go build -trimpath -ldflags "-s -w" \
+    -o "dist/gh-codecrew_${tag}_${platform}${ext}" ./cmd/codecrew
+done

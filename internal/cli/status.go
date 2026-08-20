@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/radiusred/codecrew/internal/config"
-	"github.com/radiusred/codecrew/internal/gh"
-	"github.com/radiusred/codecrew/internal/tracker"
+	"github.com/radiusred/gh-codecrew/internal/config"
+	"github.com/radiusred/gh-codecrew/internal/gh"
+	"github.com/radiusred/gh-codecrew/internal/tracker"
 )
 
 func status(w io.Writer) error {

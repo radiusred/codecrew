@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/radiusred/codecrew/internal/gh"
+	"github.com/radiusred/gh-codecrew/internal/gh"
 )
 
 // GitHub implements Tracker over the gh CLI.

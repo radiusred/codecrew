@@ -1,4 +1,4 @@
-module github.com/radiusred/codecrew
+module github.com/radiusred/gh-codecrew
 
 go 1.24
 

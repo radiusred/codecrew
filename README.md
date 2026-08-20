@@ -27,15 +27,17 @@ under GitHub App identities, non-doer review, deterministic CI gates, and a
 synthesized closing document — and was closed by the binary itself. See
 [docs/milestones/](docs/milestones/) for the per-milestone records.
 
-Not yet here: `gh extension install` packaging (in progress), a QA agent
-dispatch history, and any backend other than GitHub.
+Not yet here: a QA agent dispatch history, and any backend other than GitHub.
 
-## Use
+## Install and use
 
 ```sh
-go build ./cmd/codecrew    # single static binary; requires gh on PATH
-codecrew status            # open milestones, inferred task states, raised gates
-codecrew help              # the full verb list
+gh extension install radiusred/gh-codecrew   # precompiled, all platforms
+gh codecrew status         # open milestones, inferred task states, raised gates
+gh codecrew help           # the full verb list
+
+# or build from source (single static binary; requires gh on PATH):
+go build ./cmd/codecrew
 ```
 
 Every repo in a CodeCrew project carries a `.codecrew.yml` pointing at the
