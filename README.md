@@ -21,11 +21,21 @@ CodeCrew is three things:
 
 The protocol is specified and the CLI works: `status`, `milestone new/close`,
 `task new/start/finish`, and `checkpoint` are all implemented, with
-machine-readable refusals (`refused[CODE]: detail`) when a gate blocks.
-Milestone 1 was built *with* the protocol it delivered — agent-authored PRs
-under GitHub App identities, non-doer review, deterministic CI gates, and a
-synthesized closing document — and was closed by the binary itself. See
-[docs/milestones/](docs/milestones/) for the per-milestone records.
+machine-readable refusals (`refused[CODE]: detail`) when a gate blocks —
+including `GATE_UNRECORDED` when a raised gate lacks a recorded resolution,
+and `VERDICT_MISSING`/`VERDICT_UNSATISFIED` when a milestone tries to close
+without a satisfied QA verdict on every requirement. `task start` is
+role-aware: roles whose contracts forbid commits (qa, reviewer) get no
+linked development branch.
+
+Three milestones have been delivered *with* the protocol — agent-authored
+PRs under GitHub App identities, non-doer review, deterministic CI gates, QA
+verdicts enforced at close, and synthesized closing documents. The first
+spoke is live: [radiusred/www](https://github.com/radiusred/www) is driven
+from this hub through the installed extension, and its first delivery was
+[a blog post introducing CodeCrew, published by the protocol it
+describes](https://www.radiusred.uk/blog/posts/2026-08-20-this-post-was-delivered-by-the-framework-it-introduces/).
+See [docs/milestones/](docs/milestones/) for the per-milestone records.
 
 Not yet here: any backend other than GitHub.
 
@@ -41,14 +51,18 @@ go build ./cmd/codecrew
 ```
 
 Every repo in a CodeCrew project carries a `.codecrew.yml` pointing at the
-hub (this repo is its own hub: `hub: self`). Agents dispatched into a
+hub — a spoke's is a two-line pointer; this repo is its own hub
+(`hub: self`; see SPEC §3 for choosing yours). Agents dispatched into a
 CodeCrew repo start at [AGENTS.md](AGENTS.md). Agent identities are GitHub
-Apps; short-lived tokens come from `scripts/codecrew-token` (see SPEC §5 for
-the identity tiers — a solo operator needs nothing but `gh auth login`).
+Apps; short-lived tokens come from `scripts/codecrew-token` (see SPEC §5 and
+[docs/identities.md](docs/identities.md) for the identity tiers — a solo
+operator needs nothing but `gh auth login`, self-confirmation recorded).
 
 ## Documents
 
 - [SPEC.md](SPEC.md) — the protocol
+- [docs/identities.md](docs/identities.md) — running solo, and minting
+  per-role GitHub App identities
 - [docs/founding-decisions.md](docs/founding-decisions.md) — design decisions
   and their trade-offs
 - [docs/milestones/](docs/milestones/) — the per-milestone "why" records
