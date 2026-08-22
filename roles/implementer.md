@@ -40,7 +40,11 @@ Resolve your GitHub credentials in this order:
   obvious the answer seems.
 - **Open the PR** referencing the task (`Closes #123`) and finalize its
   description as the task summary: what was done, which requirements it
-  satisfies, links to any deviation comments.
+  satisfies, links to any deviation comments. Request review from the
+  reviewer role's holder — `--reviewer $(codecrew role reviewer)`, skipped
+  when it prints `~` (the operator holds the role and there is no username
+  to request). CODEOWNERS-driven requests coexist: requested reviewers
+  union, and neither mechanism should be disabled for the other.
 
 ## Never
 
