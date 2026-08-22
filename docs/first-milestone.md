@@ -1,10 +1,11 @@
 # Your first milestone
 
-This is the whole path, start to finish, for one person and a brand-new
-project: install CodeCrew, scaffold a repo, and drive one milestone from
-opening to audited close. No GitHub Apps, no configuration beyond what the
-tool writes for you, no prior knowledge assumed. Every command is one you
-can paste.
+This is the whole path, start to finish, for the most common setup: **one
+human, one coding agent to hand** (a Claude Code, Codex, or similar session),
+and a brand-new project. Install CodeCrew, scaffold a repo, and drive one
+milestone from opening to audited close. No GitHub Apps, no configuration
+beyond what the tool writes for you, no prior knowledge assumed — and no
+paid GitHub plan: everything here works on the free tier.
 
 Two ideas carry everything else. First, **project state lives in GitHub** —
 issues, sub-issues, labels, and PRs — so there is nothing to keep in sync
@@ -13,12 +14,27 @@ the CLI exits with `refused[CODE]: detail` telling you exactly what's
 missing. A refusal is the guide-rail working, not an error. This guide walks
 you into each one you'll meet, on purpose.
 
+## You and your agent
+
+The expected division of labour: **your agent runs the loop, you make the
+calls**. The agent acts as orchestrator and implementer in one session — it
+runs the verbs, writes plans into task issues, does the work, opens the
+PRs, and stops at every gate; you review, resolve raised gates, confirm
+merges, and give verdicts. Point the agent at this page (and `AGENTS.md`,
+which `init` writes) and ask it to drive; the refusals keep it honest even
+when you're not watching.
+
+Every command below is equally pasteable by a human — the protocol is fully
+human-operable end to end, and running one milestone by hand is a fine way
+to learn what your agent is doing. But the framework earns its keep when
+the agent does the typing and the record proves what happened.
+
 ## 0. Prerequisites
 
 A GitHub account, [`gh`](https://cli.github.com/) installed and signed in
-(`gh auth login`), and `git`. That's all — you are the whole crew today
-(SPEC §5 calls this solo routing; [identities.md](identities.md) covers
-delegating roles to agents later).
+(`gh auth login`), `git`, and (recommended) your coding agent of choice.
+You and your agent are the whole crew today (SPEC §5 calls this solo
+routing; the [What next](#what-next) ladder covers expanding it).
 
 ## 1. Install and scaffold
 
@@ -156,10 +172,23 @@ permanent, linked, and public to whoever you choose.
 
 ## What next
 
-- More requirements per milestone, more tasks per requirement — the loop is
-  the same shape at every size.
-- CI required checks give `task finish`'s gate real teeth ([SPEC
-  §8](../SPEC.md)).
-- When you want a second pair of eyes — human or agent — route a role:
-  [identities.md](identities.md). The protocol doesn't change; only the
-  routing table does.
+The loop above is the same shape at every size — more requirements per
+milestone, more tasks per requirement, CI required checks to give `task
+finish`'s gate real teeth ([SPEC §8](../SPEC.md)). The interesting growth is
+in the crew, and it's a ladder:
+
+1. **Split the roles across sessions.** Your agent doing the work and then
+   verdicting its own milestone shares one context's blind spots. The cheap
+   fix: have your harness launch a sub-agent per role, each briefed with the
+   role's contract from `roles/` — a fresh-context QA reading `roles/qa.md`
+   probes what the implementer's context wouldn't. Or cross model families:
+   dispatch another LLM through its own CLI for the reviewer or qa seat.
+   Same identities, same commands — just different eyes.
+2. **Give crew members their own identities.** When you want the record to
+   show *which* agent did what — and GitHub itself to enforce that the
+   approver isn't the author — route roles to GitHub App identities (or
+   other humans, by username): [identities.md](identities.md). The protocol
+   doesn't change; only the routing table does.
+3. **Full orchestration platforms** — an orchestrator dispatching the whole
+   crew against the routing table, webhooks instead of polling. Works today
+   through the same seams; dedicated docs are on the backlog.
