@@ -82,6 +82,23 @@ func (c *Config) RoleFor(login string) string {
 	return ""
 }
 
+// HoldsRole reports whether login holds the named role. A routed role is
+// held exactly by its identity — a GitHub App slug or a human's username.
+// An unrouted role (no identity) is held by the human operator: any human
+// login not routed to a different role. Solo is a routing configuration,
+// not a degraded tier — every role is always staffed (SPEC §5, decided at
+// the gate on gh-codecrew#42).
+func (c *Config) HoldsRole(login, role string) bool {
+	bare := strings.TrimSuffix(login, "[bot]")
+	if bare == "" {
+		return false
+	}
+	if id := c.Roles[role].Identity; id != "" {
+		return bare == id
+	}
+	return bare == login && c.RoleFor(login) == ""
+}
+
 // HubRepo resolves the hub to an owner/repo string. current is the
 // owner/repo of the repository the command runs in, used when hub is "self".
 func (c *Config) HubRepo(current string) string {

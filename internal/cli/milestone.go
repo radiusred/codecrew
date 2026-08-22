@@ -126,7 +126,8 @@ func milestoneClose(w io.Writer, args []string) error {
 	}
 
 	// Gate 2: every requirement carries a satisfied QA verdict (a later
-	// verdict supersedes an earlier one; only the QA role's count).
+	// verdict supersedes an earlier one; only the qa role's holder counts —
+	// its routed identity, or the human operator when the role is unrouted).
 	body, err := c.t.IssueBody(milestone.Ref)
 	if err != nil {
 		return err
@@ -137,7 +138,7 @@ func milestoneClose(w io.Writer, args []string) error {
 	}
 	latest := map[string]string{}
 	for _, v := range tracker.ParseVerdicts(comments) {
-		if c.roleFor(v.Author) == "qa" {
+		if c.holdsRole(v.Author, "qa") {
 			latest[v.ID] = v.State
 		}
 	}
@@ -156,6 +157,9 @@ func milestoneClose(w io.Writer, args []string) error {
 	}
 	if len(unsatisfied) > 0 {
 		return refuse("VERDICT_UNSATISFIED", "latest QA verdict not satisfied for: %s — remedy and re-dispatch QA", strings.Join(unsatisfied, ", "))
+	}
+	if len(latest) > 0 && c.rolesConfig().Roles["qa"].Identity == "" {
+		fmt.Fprintln(w, "note: qa is unrouted — verdicts counted from the human operator holding the role; declare role routing in the hub's .codecrew.yml at onboarding (SPEC §5)")
 	}
 
 	// Gather Decision/Deviation raw material for the doc-synthesizer.

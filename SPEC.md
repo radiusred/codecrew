@@ -296,14 +296,29 @@ roles:
 Role routing is **advisory**: CodeCrew does not dispatch agents, so the config
 is a contract for the orchestrator (or human) that does.
 
-`identity` names the **GitHub App** the role acts as. Each role gets its own
-app identity so agent-authored work is attributable and distinct from the
-operator — without this, every PR is authored by the operator's account and
-GitHub's prohibition on self-approval makes the non-doer review gate
-unsatisfiable. App private keys live outside the repo (by convention
+**Every role is always staffed — solo is a routing configuration, not a
+reduced protocol.** The routing table says *who* holds each role: a GitHub
+App (an agent acting as itself), a specific human (their GitHub username),
+or — with no identity (`~`) — the human operator. An orchestrator dispatches
+sub-agents or delegates to other harnesses per this table; a solo operator
+embodies whatever routes to `~`. The hub's config should declare all four
+roles at project onboarding, each routed explicitly; an orchestrator finding
+no routing table should prompt for one rather than assume. The CLI tolerates
+an absent table (every role is then operator-held) but says so in its output.
+
+`identity` names the **GitHub App** — or the GitHub username of a specific
+human — the role acts as. Each agent-staffed role gets its own app identity
+so agent-authored work is attributable and distinct from the operator —
+without this, every PR is authored by the operator's account and GitHub's
+prohibition on self-approval makes the non-doer review gate unsatisfiable.
+App private keys live outside the repo (by convention
 `~/.config/codecrew/<slug>.*.private-key.pem`); short-lived installation
-tokens are minted per invocation. A role with no identity (`~`) acts as the
-human operator.
+tokens are minted per invocation.
+
+Where a verb gates on a role — `milestone close` counts only the qa role
+holder's verdicts — "holder" means the routed identity, or, for an unrouted
+role, any human identity not routed to a different role. Crew identities can
+never stand in for a role they are not routed to.
 
 ### Identity tiers
 
@@ -365,7 +380,7 @@ hub).
 | `codecrew task start <ref>` | Assigns the caller's identity, verifies a plan is present (refuses to start a planless nontrivial task), creates the working branch — unless the caller's role routing resolves to a role whose contract forbids commits (`qa`, `reviewer`), which get no branch. |
 | `codecrew checkpoint <ref> --question "…"` | Raises a human gate: posts the question as a comment, applies `cc:needs-decision`. |
 | `codecrew task finish <ref>` | The gatekeeper: verifies a PR exists, CI checks are green, an approving review exists from a non-doer, and deviations referenced in the PR body have recorded comments — then merges (rebase) and closes. Refuses otherwise, with the specific unmet condition. In a solo-tier project (§5) where author and operator are the same principal, the non-doer approval degrades to an explicit operator confirmation, recorded as a PR comment; the confirming identity must be human — crew identities (`[bot]` suffix or routed role) are refused with `refused[SELF_CONFIRM]`. |
-| `codecrew milestone close <id>` | Verifies all tasks closed and every requirement's latest QA verdict is `satisfied` (`refused[VERDICT_MISSING]` / `refused[VERDICT_UNSATISFIED]` otherwise; only verdicts from the QA role's identity count, and a later verdict supersedes an earlier one); gathers every Decision/Deviation comment across the milestone's tasks into raw material for the doc-synthesizer; refuses to close until the milestone document PR is merged. |
+| `codecrew milestone close <id>` | Verifies all tasks closed and every requirement's latest QA verdict is `satisfied` (`refused[VERDICT_MISSING]` / `refused[VERDICT_UNSATISFIED]` otherwise; only verdicts from the qa role's holder count — its routed identity, or the human operator when the role is unrouted (§5) — and a later verdict supersedes an earlier one); gathers every Decision/Deviation comment across the milestone's tasks into raw material for the doc-synthesizer; refuses to close until the milestone document PR is merged. |
 
 Verbs exit nonzero with a machine-readable reason when a gate blocks them, so
 agents can act on the refusal rather than parse prose.
