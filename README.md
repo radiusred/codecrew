@@ -43,6 +43,7 @@ Not yet here: any backend other than GitHub.
 
 ```sh
 gh extension install radiusred/gh-codecrew   # precompiled, all platforms
+gh codecrew init           # scaffold a new project (see docs/first-milestone.md)
 gh codecrew status         # open milestones, inferred task states, raised gates
 gh codecrew help           # the full verb list
 
@@ -61,6 +62,8 @@ operator needs nothing but `gh auth login`, self-confirmation recorded).
 ## Documents
 
 - [SPEC.md](SPEC.md) — the protocol
+- [docs/first-milestone.md](docs/first-milestone.md) — the quickstart: a
+  stranger's first milestone, end to end
 - [docs/identities.md](docs/identities.md) — running solo, and minting
   per-role GitHub App identities
 - [docs/founding-decisions.md](docs/founding-decisions.md) — design decisions
