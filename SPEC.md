@@ -303,8 +303,10 @@ or — with no identity (`~`) — the human operator. An orchestrator dispatches
 sub-agents or delegates to other harnesses per this table; a solo operator
 embodies whatever routes to `~`. The hub's config should declare all four
 roles at project onboarding, each routed explicitly; an orchestrator finding
-no routing table should prompt for one rather than assume. The CLI tolerates
-an absent table (every role is then operator-held) but says so in its output.
+no routing table should prompt for one rather than assume. `codecrew init`
+(§6) scaffolds exactly this — the table with every role routed `~` — so
+onboarding starts explicit. The CLI tolerates an absent table (every role is
+then operator-held) but says so in its output.
 
 `identity` names the **GitHub App** — or the GitHub username of a specific
 human — the role acts as. A value containing a slash is reserved: it will
@@ -377,6 +379,7 @@ hub).
 | Verb | What it does |
 |------|--------------|
 | `codecrew status` | Where the project is: open milestones, task states, raised gates. |
+| `codecrew init [--hub owner/repo]` | Scaffolds a new repo: hub mode writes `.codecrew.yml` with the full `~`-routed roles table, the ROADMAP.md seed, the role contracts (embedded at the installed release), and an AGENTS.md entry point; spoke mode writes the two-line pointer. Idempotent — existing files are kept and reported. |
 | `codecrew milestone new` | Creates a milestone tracking issue in the hub from the template; updates ROADMAP.md. |
 | `codecrew task new --milestone <id> --repo <spoke>` | Creates a task issue in the spoke from the template; attaches it to the milestone as a sub-issue. |
 | `codecrew task start <ref>` | Assigns the caller's identity, verifies a plan is present (refuses to start a planless nontrivial task), creates the working branch — unless the caller's role routing resolves to a role whose contract forbids commits (`qa`, `reviewer`), which get no branch. |

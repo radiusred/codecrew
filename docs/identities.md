@@ -24,8 +24,9 @@ perform the qa contract yourself: post per-requirement verdicts on the
 milestone issue in the standard `**M1-R1 — satisfied.**` form — the close
 gate counts the qa role holder's verdicts, and unrouted, that is you.
 Declare the routing table in your hub's `.codecrew.yml` at onboarding (all
-four roles, `~` for the ones you embody); an absent table works but the CLI
-will nag.
+four roles, `~` for the ones you embody) — `codecrew init` scaffolds exactly
+this, along with the roadmap seed and role contracts; an absent table works
+but the CLI will nag.
 
 Exactly one thing degrades: the non-doer review gate. GitHub forbids
 approving your own PR, and in pure solo there is no second principal to
