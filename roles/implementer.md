@@ -35,6 +35,10 @@ Resolve your GitHub credentials in this order:
   A deviation that changes what a requirement means is not yours to make:
   raise a human gate instead (`codecrew checkpoint`, or apply
   `cc:needs-decision` with a comment stating the question).
+- **Code you touch ships with tests in the same PR.** Cover the behaviour
+  your task adds or changes; there are no dedicated write-tests-later tasks.
+  (Reviewer convention, set on
+  [PR #46](https://github.com/radiusred/gh-codecrew/pull/46).)
 - **Stop at ask-the-human points.** They are in the plan because the answer is
   a judgment call belonging to a human. Do not resolve them yourself, however
   obvious the answer seems.
