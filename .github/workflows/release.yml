@@ -19,3 +19,7 @@ jobs:
       - uses: cli/gh-extension-precompile@v2
         with:
           build_script_override: scripts/build-extension
+          # The action sets up its own Go (1.18, GOTOOLCHAIN=local),
+          # ignoring the setup-go step above — pin it to the module's
+          # toolchain or any post-1.18 stdlib use breaks release builds.
+          go_version_file: go.mod
