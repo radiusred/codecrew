@@ -60,6 +60,46 @@ func TestRoleFor(t *testing.T) {
 	}
 }
 
+func TestHoldsRole(t *testing.T) {
+	routed := &Config{Roles: map[string]Role{
+		"implementer": {Identity: "radiusred-cody"},
+		"qa":          {Identity: "radiusred-testy"},
+	}}
+	human := &Config{Roles: map[string]Role{
+		"implementer": {Identity: "radiusred-cody"},
+		"qa":          {Identity: "alice"},
+	}}
+	unrouted := &Config{Roles: map[string]Role{
+		"implementer": {Identity: "radiusred-cody"},
+		"qa":          {}, // identity: ~ — held by the human operator
+	}}
+	empty := &Config{}
+	cases := []struct {
+		name  string
+		cfg   *Config
+		login string
+		want  bool
+	}{
+		{"routed: its bot holds", routed, "radiusred-testy[bot]", true},
+		{"routed: bare slug holds", routed, "radiusred-testy", true},
+		{"routed: a human does not", routed, "davison", false},
+		{"routed: another crew bot does not", routed, "radiusred-cody[bot]", false},
+		{"routed to a human: that human holds", human, "alice", true},
+		{"routed to a human: another human does not", human, "bob", false},
+		{"unrouted: the operator holds", unrouted, "davison", true},
+		{"unrouted: a crew bot does not", unrouted, "radiusred-cody[bot]", false},
+		{"unrouted: an unrelated bot does not", unrouted, "somebot[bot]", false},
+		{"unrouted: an identity routed elsewhere does not", unrouted, "radiusred-cody", false},
+		{"no roles at all: the operator holds", empty, "davison", true},
+		{"empty login never holds", unrouted, "", false},
+	}
+	for _, c := range cases {
+		if got := c.cfg.HoldsRole(c.login, "qa"); got != c.want {
+			t.Errorf("%s: HoldsRole(%q) = %v, want %v", c.name, c.login, got, c.want)
+		}
+	}
+}
+
 func TestHubRepo(t *testing.T) {
 	self := &Config{Hub: "self"}
 	if got := self.HubRepo("radiusred/spoke"); got != "radiusred/spoke" {

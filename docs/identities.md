@@ -16,14 +16,23 @@ Prerequisites: a GitHub account, `gh` authenticated (`gh auth login`), the
 extension installed (`gh extension install radiusred/gh-codecrew`), and a
 `.codecrew.yml` in your repo (`hub: self` for a single-repo project).
 
-Everything works. You (or agents running under your auth) create milestones
-and tasks, write plans, commit, open PRs, raise and resolve gates. Exactly
-one thing degrades: the non-doer review gate. GitHub forbids approving your
-own PR, and in pure solo there is no second principal to approve — so
-`task finish` accepts `--operator-confirm` instead, and records an explicit
-confirmation comment on the PR. When the confirming operator is also the PR
-author, the recorded comment says so in as many words: *no independent
-principal exists in this project*.
+Everything works, because solo is a routing configuration, not a reduced
+protocol: every role is always staffed, and in pure solo *you* hold each
+unrouted one. You (or agents running under your auth) create milestones and
+tasks, write plans, commit, open PRs, raise and resolve gates. You also
+perform the qa contract yourself: post per-requirement verdicts on the
+milestone issue in the standard `**M1-R1 — satisfied.**` form — the close
+gate counts the qa role holder's verdicts, and unrouted, that is you.
+Declare the routing table in your hub's `.codecrew.yml` at onboarding (all
+four roles, `~` for the ones you embody); an absent table works but the CLI
+will nag.
+
+Exactly one thing degrades: the non-doer review gate. GitHub forbids
+approving your own PR, and in pure solo there is no second principal to
+approve — so `task finish` accepts `--operator-confirm` instead, and records
+an explicit confirmation comment on the PR. When the confirming operator is
+also the PR author, the recorded comment says so in as many words: *no
+independent principal exists in this project*.
 
 Two honesty notes:
 

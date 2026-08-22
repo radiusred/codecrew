@@ -33,7 +33,9 @@ Resolve credentials as in `roles/implementer.md`, using `roles.qa.identity`.
 
   A later verdict supersedes your earlier one for the same requirement; say
   so when re-verifying. Every requirement's latest verdict must be
-  `satisfied` before the milestone can close.
+  `satisfied` before the milestone can close. When the qa role is unrouted,
+  the human operator holds it and performs this contract themselves — same
+  format, same gate (SPEC §5).
 - Raise `cc:needs-decision` when behaviour is defensible but the requirement
   is ambiguous — that ambiguity is a human's to resolve, not yours.
 

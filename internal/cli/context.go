@@ -15,6 +15,8 @@ type ctx struct {
 	current string // owner/repo the command runs in
 	hub     string // owner/repo of the hub
 	t       tracker.Tracker
+
+	roles *config.Config // memoized routing table (local or hub)
 }
 
 func load() (*ctx, error) {
@@ -34,23 +36,35 @@ func load() (*ctx, error) {
 	}, nil
 }
 
+// rolesConfig returns the config whose routing table governs role
+// resolution. Spokes carry only the pointer config (SPEC §5), so when the
+// local file has no roles the hub's .codecrew.yml is fetched (memoized); an
+// unreadable hub config degrades to the local one rather than failing the
+// verb — routing is advisory.
+func (c *ctx) rolesConfig() *config.Config {
+	if c.roles != nil {
+		return c.roles
+	}
+	c.roles = c.cfg
+	if len(c.cfg.Roles) == 0 {
+		if data, err := c.t.FileContent(c.hub, ".codecrew.yml"); err == nil {
+			if hubCfg, err := config.Parse(data); err == nil {
+				c.roles = hubCfg
+			}
+		}
+	}
+	return c.roles
+}
+
 // roleFor resolves a viewer login to its role name via the routing table.
-// Spokes carry only the pointer config (SPEC §5), so when the local file has
-// no roles the hub's .codecrew.yml is fetched; an unreadable hub config
-// degrades to no role rather than failing the verb — routing is advisory.
 func (c *ctx) roleFor(login string) string {
-	if len(c.cfg.Roles) > 0 {
-		return c.cfg.RoleFor(login)
-	}
-	data, err := c.t.FileContent(c.hub, ".codecrew.yml")
-	if err != nil {
-		return ""
-	}
-	hubCfg, err := config.Parse(data)
-	if err != nil {
-		return ""
-	}
-	return hubCfg.RoleFor(login)
+	return c.rolesConfig().RoleFor(login)
+}
+
+// holdsRole reports whether login holds the named role (config.HoldsRole
+// over the governing routing table).
+func (c *ctx) holdsRole(login, role string) bool {
+	return c.rolesConfig().HoldsRole(login, role)
 }
 
 // refusal is a blocked gate: a machine-readable code plus a human detail.
