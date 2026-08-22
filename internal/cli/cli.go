@@ -9,6 +9,7 @@ import (
 const usage = `usage: codecrew <verb>
 
 verbs:
+  init [--hub owner/repo]                    scaffold a new hub (or spoke pointer)
   status                                     where the project is
   milestone new --title T [--goal G]         create a milestone tracking issue
   milestone close <n>                        close a milestone (gates: tasks closed, doc merged)
@@ -30,6 +31,8 @@ func Run(args []string) error {
 	}
 	verb, rest := args[0], args[1:]
 	switch verb {
+	case "init":
+		return initCmd(os.Stdout, rest)
 	case "status":
 		return status(os.Stdout)
 	case "milestone", "task":
