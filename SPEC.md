@@ -307,7 +307,9 @@ no routing table should prompt for one rather than assume. The CLI tolerates
 an absent table (every role is then operator-held) but says so in its output.
 
 `identity` names the **GitHub App** — or the GitHub username of a specific
-human — the role acts as. Each agent-staffed role gets its own app identity
+human — the role acts as. A value containing a slash is reserved: it will
+name a GitHub team (`org/team-slug`), routing the role to any member
+([#44](https://github.com/radiusred/gh-codecrew/issues/44)). Each agent-staffed role gets its own app identity
 so agent-authored work is attributable and distinct from the operator —
 without this, every PR is authored by the operator's account and GitHub's
 prohibition on self-approval makes the non-doer review gate unsatisfiable.
