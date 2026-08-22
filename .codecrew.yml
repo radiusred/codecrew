@@ -12,7 +12,7 @@ roles:
     identity: radiusred-cody
   reviewer:
     harness: codex
-    identity: ~ # human operator reviews during bootstrap
+    identity: davison # the bootstrap human, by name; an App takes the seat in #34
   qa:
     harness: codex
     identity: radiusred-testy

@@ -17,6 +17,7 @@ verbs:
   task start <ref>                           assign, verify plan, create linked branch
   task finish <ref> [--operator-confirm]     enforce gates, then rebase-merge
   checkpoint <ref> --question "..."          raise a human gate (cc:needs-decision)
+  role <name>                                who holds a role (identity, or ~ for the operator)
 
 Blocked gates exit nonzero with "refused[CODE]: detail".
 `
@@ -53,6 +54,8 @@ func Run(args []string) error {
 		}
 	case "checkpoint":
 		return checkpoint(os.Stdout, rest)
+	case "role":
+		return roleHolder(os.Stdout, rest)
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 		return nil
